@@ -1,0 +1,13 @@
+version: "3.7"
+
+services:
+    utekai:
+        build:
+            context: .
+            dockerfile: dockerfile
+        env_file:
+            - .env
+        ports:
+            - "9292:443"
+        volumes:
+            - ./credentials:/credentials
