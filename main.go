@@ -13,6 +13,7 @@ import (
 
 var bot *tBot.Bot
 var texts = map[string]string{
+	"next":                    "Далее",
 	"hello":                   "Привет! Мы клёвый бот, зовёмся паузой, Лиза классная, небо голубое.\n\n",
 	"anonimous_ask":           "Хошь анонимности?",
 	"anonimous_confirmed":     "Всё анонимно до чёртиков.",
@@ -20,6 +21,7 @@ var texts = map[string]string{
 	"anonimous_notif":         "Ответы будут обезличены.",
 	"non_anonimous_notif":     "Художница увидит ваш ник.",
 	"notify_suggest":          "Включи уведомления, а то чо ты как лох. Чтобы бот и в могиле достучался.",
+	"announce_text":           "Ну пришлём чё-нить скоро, чо, жди.",
 }
 
 func main() {
@@ -61,8 +63,8 @@ func setupStartCases() func(*tBot.Message) {
 		Text:   "No",
 	}
 
-	bot.Handle(&anonimous, createAnonymityChoiceProcessor(true))
-	bot.Handle(&nonAnonimous, createAnonymityChoiceProcessor(false))
+	bot.Handle(&anonimous, createAnonymityChoiseProcessor(true))
+	bot.Handle(&nonAnonimous, createAnonymityChoiseProcessor(false))
 
 	return func(message *tBot.Message) {
 		log.Print(fmt.Printf("/hello: sender %v", message.Sender))
@@ -71,11 +73,11 @@ func setupStartCases() func(*tBot.Message) {
 			InlineKeyboard: [][]tBot.InlineButton{{anonimous, nonAnonimous}},
 		})
 
-		go sheets.Check()
+		// go sheets.Check()
 	}
 }
 
-func createAnonymityChoiceProcessor(anonimous bool) func(*tBot.Callback) {
+func createAnonymityChoiseProcessor(anonimous bool) func(*tBot.Callback) {
 	var notifText, confirmText string
 	if anonimous {
 		notifText = texts["anonimous_notif"]
@@ -85,18 +87,68 @@ func createAnonymityChoiceProcessor(anonimous bool) func(*tBot.Callback) {
 		confirmText = texts["non_anonimous_confirmed"]
 	}
 
+	nextButton := tBot.InlineButton{
+		Unique: "after_anonimity_next",
+		Text:   texts["next"],
+	}
+
+	suggestNotify := createNotifySuggester()
+	bot.Handle(&nextButton, func(callback *tBot.Callback) {
+		_, err := bot.Edit(callback.Message, texts["hello"]+confirmText)
+
+		if err != nil {
+			log.Fatalln("Cannot edit hello message", err)
+		}
+
+		suggestNotify(callback)
+	})
+
 	return func(callback *tBot.Callback) {
 		defer bot.Respond(callback, &tBot.CallbackResponse{
 			Text: notifText,
 		})
 
-		_, err := bot.Edit(callback.Message, texts["hello"]+confirmText)
+		_, err := bot.Edit(callback.Message, texts["hello"]+confirmText, &tBot.ReplyMarkup{
+			InlineKeyboard: [][]tBot.InlineButton{{nextButton}},
+		})
+
 		if err != nil {
 			log.Fatalln("Cannot edit hello message", err)
 		}
-		_, err = bot.Send(callback.Sender, texts["notify_suggest"])
+	}
+}
+
+func createNotifySuggester() func(*tBot.Callback) {
+	nextButton := tBot.InlineButton{
+		Unique: "after_suggest_next",
+		Text:   texts["next"],
+	}
+
+	bot.Handle(&nextButton, func(callback *tBot.Callback) {
+		_, err := bot.Edit(callback.Message, texts["notify_suggest"])
+
+		if err != nil {
+			log.Fatalln("Cannot edit hello message", err)
+		}
+
+		announce(callback)
+	})
+
+	return func(callback *tBot.Callback) {
+		_, err := bot.Send(callback.Sender, texts["notify_suggest"], &tBot.ReplyMarkup{
+			InlineKeyboard: [][]tBot.InlineButton{{nextButton}},
+		})
+
 		if err != nil {
 			log.Fatalln("Cannot send notify suggestion ", err)
 		}
+	}
+}
+
+func announce(callback *tBot.Callback) {
+	_, err := bot.Send(callback.Sender, texts["announce_text"])
+
+	if err != nil {
+		log.Fatalln("Cannot send announce text ", err)
 	}
 }
