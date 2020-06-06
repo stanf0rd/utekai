@@ -58,35 +58,37 @@ func initBot() (*tBot.Bot, error) {
 }
 
 func createStart() func(*tBot.Message) {
-	createRules := func(anonymous bool) func(*tBot.Callback) {
-		return func(callback *tBot.Callback) {
-			printRules(callback, anonymous)
+	createRegistrar := func(anonymous bool) func(*tBot.Callback) {
+		text := fmt.Sprintf("%s\n\n%s", texts["greeting_text"], texts["notify_suggest"])
+		if anonymous {
+			text = fmt.Sprintf("%s\n\n%s", text, texts["anonimous_confirmed"])
+		} else {
+			text = fmt.Sprintf("%s\n\n%s", text, texts["non_anonimous_confirmed"])
 		}
+
+		register := func(callback *tBot.Callback) {
+			// create user in DB here
+
+			_, err := bot.Edit(callback.Message, text)
+			if err != nil {
+				log.Fatalln("Cannot edit message")
+			}
+		}
+
+		return register
 	}
 
-	return createAnonymityAsk(createRules)
+	return createAnonymityAsk(createRegistrar)
 }
 
-func printRules(callback *tBot.Callback, anonymous bool) {
-	text := fmt.Sprintf("%s\n\n%s", texts["greeting_text"], texts["notify_suggest"])
-	if anonymous {
-		text = fmt.Sprintf("%s\n\n%s", text, texts["anonimous_confirmed"])
-	} else {
-		text = fmt.Sprintf("%s\n\n%s", text, texts["non_anonimous_confirmed"])
-	}
-
-	_, err := bot.Edit(callback.Message, text)
-	if err != nil {
-		log.Fatalln("Cannot edit message")
-	}
-}
-
-func createAnonymityAsk(createRules func(bool) func(*tBot.Callback)) func(*tBot.Message) {
+func createAnonymityAsk(
+	createRegistrar func(anonimous bool) func(*tBot.Callback),
+) func(*tBot.Message) {
 	nonAnonymous := createButton("Да")
 	anonymous := createButton("Нет")
 
-	bot.Handle(&anonymous, createRules(true))
-	bot.Handle(&nonAnonymous, createRules(false))
+	bot.Handle(&anonymous, createRegistrar(true))
+	bot.Handle(&nonAnonymous, createRegistrar(false))
 
 	return func(message *tBot.Message) {
 		bot.Send(message.Sender, texts["anonimous_ask"], &tBot.ReplyMarkup{
