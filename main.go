@@ -8,6 +8,7 @@ import (
 
 	tBot "gopkg.in/tucnak/telebot.v2"
 
+	"github.com/stanf0rd/utekai/database"
 	"github.com/stanf0rd/utekai/generator"
 	"github.com/stanf0rd/utekai/sheets"
 )
@@ -68,8 +69,35 @@ func createStart() func(*tBot.Message) {
 
 		register := func(callback *tBot.Callback) {
 			// create user in DB here
+			u := database.User{
+				TelegramID: callback.Sender.ID,
+				Anonymous:  anonymous,
+			}
 
-			_, err := bot.Edit(callback.Message, text)
+			exists, err := u.Exists()
+			if err != nil {
+				log.Fatalf("Cannot check user %d existance, error: %v", u.TelegramID, err)
+			}
+
+			if exists {
+				err := u.UpdateAnonymity()
+
+				if err == nil {
+					log.Printf("User #%d set his anonymity to %t", u.ID, u.Anonymous)
+				} else {
+					log.Fatalf("Cannot update user %d, error: %v", u.TelegramID, err)
+				}
+			} else {
+				err := u.Save()
+
+				if err == nil {
+					log.Printf("User %d was saved, his ID was set to %d", u.TelegramID, u.ID)
+				} else {
+					log.Fatalf("Cannot save user %d, error: %v", u.TelegramID, err)
+				}
+			}
+
+			_, err = bot.Edit(callback.Message, text)
 			if err != nil {
 				log.Fatalln("Cannot edit message")
 			}
