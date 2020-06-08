@@ -34,9 +34,9 @@ func init() {
 
 // User - basic user type
 type User struct {
-	ID         int
-	TelegramID int
-	Anonymous  bool
+	ID         int  `db:"id"`
+	TelegramID int  `db:"telegramID"`
+	Anonymous  bool `db:"anonymous"`
 }
 
 // Exists checks if user row is already in database
@@ -90,23 +90,23 @@ func (u *User) UpdateAnonymity() error {
 }
 
 // GetAllUsers returns all users collected in database
-// func GetAllUsers() []User {
-// 	rows, err := db.Query("SELECT * FROM users")
-// 	if err != nil {
-// 		log.Fatal(err)
-// 	}
-// 	defer rows.Close()
-// 	users := make([]User, 0)
+func GetAllUsers() []User {
+	rows, err := db.Query("SELECT \"id\", \"telegramID\", anonymous FROM \"users\"")
+	if err != nil {
+		log.Fatal(err) // TODO: return, not fall
+	}
+	defer rows.Close()
+	users := make([]User, 0)
 
-// 	for rows.Next() {
-// 		var u User
-// 		if err := rows.Scan(&u); err != nil {
-// 			// Check for a scan error.
-// 			// Query rows will be closed with defer.
-// 			log.Fatal(err)
-// 		}
-// 		users = append(users, u)
-// 	}
+	for rows.Next() {
+		var u User
+		if err := rows.Scan(&u.ID, &u.TelegramID, &u.Anonymous); err != nil {
+			// Check for a scan error.
+			// Query rows will be closed with defer.
+			log.Fatal(err) // TODO: return, not fall
+		}
+		users = append(users, u)
+	}
 
-// 	return users
-// }
+	return users
+}

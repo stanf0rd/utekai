@@ -31,10 +31,13 @@ func main() {
 		log.Println("Telegram-bot initialized")
 	}
 
-	sheets.Authorize()
-	log.Println("Authorized to Google services")
-
 	bot.Handle("/start", createStart())
+	bot.Handle("/shit", func(message *tBot.Message) {
+		message = nil
+		log.Println("Testing sheets...")
+		sheets.Check()
+	})
+	bot.Handle("/print", testSheets)
 
 	log.Println("Starting bot...")
 	bot.Start()
@@ -92,6 +95,7 @@ func createStart() func(*tBot.Message) {
 
 				if err == nil {
 					log.Printf("User %d was saved, his ID was set to %d", u.TelegramID, u.ID)
+					sheets.AddUserToSheet(u)
 				} else {
 					log.Fatalf("Cannot save user %d, error: %v", u.TelegramID, err)
 				}
@@ -123,4 +127,11 @@ func createAnonymityAsk(
 			InlineKeyboard: [][]tBot.InlineButton{{nonAnonymous, anonymous}},
 		})
 	}
+}
+
+func testSheets(message *tBot.Message) {
+	message = nil
+	log.Println("testing sheets...")
+	users := database.GetAllUsers()
+	sheets.PrintUsers(users)
 }

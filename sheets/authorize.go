@@ -2,7 +2,6 @@ package sheets
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -21,12 +20,8 @@ type credentials struct {
 
 var service *sheets.Service
 
-func init() {
-	Authorize()
-}
-
 // Authorize bot service account in google sheets
-func Authorize() {
+func authorize() {
 	credentials, err := readConfig(os.Getenv("G_CRED_FILE"))
 	if err != nil {
 		log.Fatalf("Unable to read credentials")
@@ -35,30 +30,6 @@ func Authorize() {
 	service, err = getSheetsClient(credentials)
 	if err != nil {
 		log.Fatalf("Unable to connect to google sheets")
-	}
-}
-
-// Check if module works
-func Check() {
-	// Change the Spreadsheet Id with yours
-	spreadsheetID := os.Getenv("SHEET_ID")
-
-	// Define the Sheet Name and fields to select
-	readRange := "Лист1!A2:B"
-
-	// Pull the data from the sheet
-	resp, err := service.Spreadsheets.Values.Get(spreadsheetID, readRange).Do()
-	if err != nil {
-		log.Fatalf("Unable to retrieve data from sheet: %v", err)
-	}
-
-	// Display pulled data
-	if len(resp.Values) == 0 {
-		fmt.Println("No data found.")
-	} else {
-		for _, row := range resp.Values {
-			fmt.Printf("%s, %s\n", row[0], row[1])
-		}
 	}
 }
 
