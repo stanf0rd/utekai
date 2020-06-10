@@ -1,6 +1,11 @@
 package sheets
 
-import "log"
+import (
+	"log"
+	"os"
+)
+
+var spreadsheetID = os.Getenv("SHEET_ID")
 
 func init() {
 	authorize()

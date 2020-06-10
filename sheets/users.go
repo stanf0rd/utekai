@@ -9,10 +9,7 @@ import (
 	"google.golang.org/api/sheets/v4"
 )
 
-var (
-	spreadsheetID = os.Getenv("SHEET_ID")
-	usersPageName = os.Getenv("USERS_PAGE_NAME")
-)
+var usersPageName = os.Getenv("USERS_PAGE_NAME")
 
 // Check if module works
 func Check() {
@@ -36,14 +33,7 @@ func Check() {
 }
 
 // PrintUsers pushes all users to gsheet
-func PrintUsers(users []database.User) {
-	firstEmpty := 1 + getFilledRowsCount(spreadsheetID, usersPageName)
-
-	count := len(users)
-	writeRange := fmt.Sprintf(
-		"%s!A%d:C%d", usersPageName, firstEmpty, firstEmpty+count,
-	)
-
+func PrintUsers(users []database.User) error {
 	var vr sheets.ValueRange
 	for _, user := range users {
 		vr.Values = append(vr.Values, []interface{}{
@@ -51,18 +41,21 @@ func PrintUsers(users []database.User) {
 		})
 	}
 
-	_, err := service.Spreadsheets.Values.Update(
-		spreadsheetID, writeRange, &vr,
-	).ValueInputOption("RAW").Do()
-
-	if err != nil {
-		log.Fatalf("Unable to print users to sheet: %v", err)
+	if err := fillPage(vr, spreadsheetID, usersPageName); err != nil {
+		return fmt.Errorf("Cannot fill users page: %v", err)
 	}
+
+	return nil
 }
 
 // AddUserToSheet prints user in the first empty row
-func AddUserToSheet(user database.User) {
-	firstEmpty := 1 + getFilledRowsCount(spreadsheetID, usersPageName)
+func AddUserToSheet(user database.User) error {
+	filledCount, err := getFilledRowsCount(spreadsheetID, usersPageName)
+	if err != nil {
+		return fmt.Errorf("Unable to count row count %v", err)
+	}
+
+	firstEmpty := filledCount + 1
 	writeRange := fmt.Sprintf("%s!A%d:C", usersPageName, firstEmpty)
 
 	vr := sheets.ValueRange{
@@ -71,11 +64,13 @@ func AddUserToSheet(user database.User) {
 		},
 	}
 
-	_, err := service.Spreadsheets.Values.Update(
+	_, err = service.Spreadsheets.Values.Update(
 		spreadsheetID, writeRange, &vr,
 	).ValueInputOption("RAW").Do()
 
 	if err != nil {
-		log.Fatalf("Unable to add user to sheet: %v", err)
+		return fmt.Errorf("Unable to add user to sheet: %v", err)
 	}
+
+	return nil
 }

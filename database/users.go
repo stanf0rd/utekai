@@ -3,7 +3,6 @@ package database
 import (
 	"database/sql"
 	"fmt"
-	"log"
 )
 
 // User - basic user type
@@ -64,10 +63,10 @@ func (u *User) UpdateAnonymity() error {
 }
 
 // GetAllUsers returns all users collected in database
-func GetAllUsers() []User {
+func GetAllUsers() ([]User, error) {
 	rows, err := db.Query("SELECT \"id\", \"telegramID\", anonymous FROM \"users\"")
 	if err != nil {
-		log.Fatal(err) // TODO: return, not fall
+		return nil, fmt.Errorf("Cannot get users from database: %v", err)
 	}
 	defer rows.Close()
 	users := make([]User, 0)
@@ -77,10 +76,10 @@ func GetAllUsers() []User {
 		if err := rows.Scan(&u.ID, &u.TelegramID, &u.Anonymous); err != nil {
 			// Check for a scan error.
 			// Query rows will be closed with defer.
-			log.Fatal(err) // TODO: return, not fall
+			return nil, fmt.Errorf("Cannot read users from database: %v", err)
 		}
 		users = append(users, u)
 	}
 
-	return users
+	return users, nil
 }
