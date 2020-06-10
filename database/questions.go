@@ -83,6 +83,28 @@ func GetQuestionCount() (int, error) {
 	return count, nil
 }
 
+// GetAllQuestions returns all questions collected in database
+func GetAllQuestions() ([]Question, error) {
+	rows, err := db.Query("SELECT \"id\", \"order\", body FROM questions")
+	if err != nil {
+		return nil, fmt.Errorf("Cannot get questions from database: %v", err) // TODO: return, not fall
+	}
+	defer rows.Close()
+	questions := make([]Question, 0)
+
+	for rows.Next() {
+		var q Question
+		if err := rows.Scan(&q.ID, &q.Order, &q.Body); err != nil {
+			// Check for a scan error.
+			// Query rows will be closed with defer.
+			return nil, fmt.Errorf("Cannot read questions from database: %v", err) // TODO: return, not fall
+		}
+		questions = append(questions, q)
+	}
+
+	return questions, nil
+}
+
 var questions = []Question{
 	{Body: "Как ты остановился?", Order: "first"},
 	{Body: "Обрати внимание на тело и опиши, что оно чувствует. Самые яркие ощущения. Теперь едва уловимые", Order: "random"},

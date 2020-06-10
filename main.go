@@ -31,12 +31,17 @@ func main() {
 		log.Println("Telegram-bot initialized")
 	}
 
+	printAllUsers()
+	printAllQuestions()
+
 	bot.Handle("/start", createStart())
 	bot.Handle("/broadcast", func(message *tBot.Message) {
 
 	})
-	bot.Handle("/print", testSheets)
-
+	bot.Handle("/print", func(message *tBot.Message) {
+		printAllUsers()
+		printAllQuestions()
+	})
 	log.Println("Starting bot...")
 	bot.Start()
 }
@@ -127,9 +132,20 @@ func createAnonymityAsk(
 	}
 }
 
-func testSheets(message *tBot.Message) {
-	message = nil
-	log.Println("testing sheets...")
-	users := database.GetAllUsers()
+func printAllUsers() {
+	users, err := database.GetAllUsers()
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	sheets.PrintUsers(users)
+}
+
+func printAllQuestions() {
+	questions, err := database.GetAllQuestions()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	sheets.PrintQuestions(questions)
 }
