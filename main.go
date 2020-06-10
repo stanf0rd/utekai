@@ -32,10 +32,8 @@ func main() {
 	}
 
 	bot.Handle("/start", createStart())
-	bot.Handle("/shit", func(message *tBot.Message) {
-		message = nil
-		log.Println("Testing sheets...")
-		sheets.Check()
+	bot.Handle("/broadcast", func(message *tBot.Message) {
+
 	})
 	bot.Handle("/print", testSheets)
 
