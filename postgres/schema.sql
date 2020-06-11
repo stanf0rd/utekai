@@ -15,11 +15,10 @@ CREATE TABLE questions (
   "order"         ordering    NOT NULL    DEFAULT 'random'
 );
 
-CREATE TABLE answers (
+CREATE TABLE pauses (
   id              SERIAL      NOT NULL    PRIMARY KEY,
-  body            TEXT        NOT NULL,
-  question        INT         NOT NULL    REFERENCES questions(id),
-  "user"          INT         NOT NULL    REFERENCES "users"(id)
+  "user"          INT         NOT NULL    REFERENCES "users"(id),
+  question        INT         NOT NULL    REFERENCES questions(id)
 );
 
 -- CREATE TABLE mailings (

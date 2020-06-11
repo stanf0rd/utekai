@@ -29,6 +29,21 @@ func (u *User) Exists() (bool, error) {
 	}
 }
 
+// GetUserByID gets user from DB
+func GetUserByID(ID int) (*User, error) {
+	var u User
+	err := db.QueryRow(`
+		SELECT id, "telegramID", anonymous FROM "users"
+		WHERE "telegramID" = $1;
+	`, ID).Scan(&u.ID, &u.TelegramID, &u.Anonymous)
+
+	if err != nil {
+		return nil, fmt.Errorf("Unable to get user from DB: %v", err)
+	}
+
+	return &u, nil
+}
+
 // Save creates and saves new user in database
 // writes userID in struct
 func (u *User) Save() error {

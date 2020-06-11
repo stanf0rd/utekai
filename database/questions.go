@@ -34,6 +34,21 @@ func initQuestions() error {
 	return nil
 }
 
+// GetQuestionByID returns questions found by id
+func GetQuestionByID(ID int) (*Question, error) {
+	row := db.QueryRow(`
+		SELECT id, body, "order" FROM questions
+		WHERE id = $1
+	`, ID)
+
+	var q Question
+	if err := row.Scan(&q.ID, &q.Body, &q.Order); err != nil {
+		return nil, fmt.Errorf("Cannot get question by ID: %v", err)
+	}
+
+	return &q, nil
+}
+
 // AddQuestions adds all questions from array to DB
 // writes userID in struct
 func AddQuestions(questions []Question) error {
@@ -71,12 +86,10 @@ func AddQuestions(questions []Question) error {
 }
 
 // GetQuestionCount gets count of questions already added to database
-func GetQuestionCount() (int, error) {
-	var count int
-
+func GetQuestionCount() (count int, err error) {
 	row := db.QueryRow("SELECT COUNT(*) FROM questions;")
 
-	if err := row.Scan(&count); err != nil {
+	if err = row.Scan(&count); err != nil {
 		return 0, fmt.Errorf("Cannot get count of questions: %v", err)
 	}
 
@@ -87,7 +100,7 @@ func GetQuestionCount() (int, error) {
 func GetAllQuestions() ([]Question, error) {
 	rows, err := db.Query("SELECT \"id\", \"order\", body FROM questions")
 	if err != nil {
-		return nil, fmt.Errorf("Cannot get questions from database: %v", err) // TODO: return, not fall
+		return nil, fmt.Errorf("Cannot get questions from database: %v", err)
 	}
 	defer rows.Close()
 	questions := make([]Question, 0)
@@ -95,14 +108,31 @@ func GetAllQuestions() ([]Question, error) {
 	for rows.Next() {
 		var q Question
 		if err := rows.Scan(&q.ID, &q.Order, &q.Body); err != nil {
-			// Check for a scan error.
-			// Query rows will be closed with defer.
-			return nil, fmt.Errorf("Cannot read questions from database: %v", err) // TODO: return, not fall
+			return nil, fmt.Errorf("Cannot read questions from database: %v", err)
 		}
 		questions = append(questions, q)
 	}
 
 	return questions, nil
+}
+
+// GetQuestionIDsByOrder gets question ids by order from database (like these linting rules)
+func GetQuestionIDsByOrder(order string) (res []int, err error) {
+	rows, err := db.Query("SELECT id FROM questions WHERE \"order\" = $1", order)
+	if err != nil {
+		return nil, fmt.Errorf("Cannot get questions from database: %v", err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var ID int
+		if err := rows.Scan(&ID); err != nil {
+			return nil, fmt.Errorf("Cannot read question IDs from database: %v", err)
+		}
+		res = append(res, ID)
+	}
+
+	return res, nil
 }
 
 var questions = []Question{

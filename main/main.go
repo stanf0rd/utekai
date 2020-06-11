@@ -35,8 +35,12 @@ func main() {
 	printAllQuestions()
 
 	bot.Handle("/start", createStart())
-	bot.Handle("/broadcast", func(message *tBot.Message) {
-
+	bot.Handle("/pause", func(message *tBot.Message) {
+		user, err := database.GetUserByID(message.Sender.ID)
+		if err != nil {
+			log.Fatal(err)
+		}
+		pause(*user)
 	})
 	bot.Handle("/print", func(message *tBot.Message) {
 		printAllUsers()
@@ -130,22 +134,4 @@ func createAnonymityAsk(
 			InlineKeyboard: [][]tBot.InlineButton{{nonAnonymous, anonymous}},
 		})
 	}
-}
-
-func printAllUsers() {
-	users, err := database.GetAllUsers()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	sheets.PrintUsers(users)
-}
-
-func printAllQuestions() {
-	questions, err := database.GetAllQuestions()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	sheets.PrintQuestions(questions)
 }

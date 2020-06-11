@@ -29,3 +29,10 @@ func IntegerInRange(min int, max int) int {
 	fmt.Printf("%d < %d < %d", min, rand.Intn(max-min+1)+min, max)
 	return rand.Intn(max-min+1) + min
 }
+
+// GetRandomFromArray chooses random integer from array
+func GetRandomFromArray(array []int) int {
+	count := len(array)
+	chosenIdx := IntegerInRange(0, count-1)
+	return array[chosenIdx]
+}
