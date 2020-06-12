@@ -46,10 +46,7 @@ func main() {
 		}
 		pause(*user)
 	})
-	bot.Handle("/print", func(message *tBot.Message) {
-		// printAllUsers()
-		// printAllQuestions()
-	})
+	bot.Handle(tBot.OnText, getAnswer)
 	bot.Handle(&readyButton, ask)
 
 	log.Println("Starting bot...")

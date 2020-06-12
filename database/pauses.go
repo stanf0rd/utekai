@@ -12,6 +12,7 @@ type Pause struct {
 	ID           int
 	User         int
 	Question     int
+	Answer       string
 	Status       string
 	AskMessageID int
 	ChatID       int64
@@ -53,7 +54,8 @@ func (p *Pause) Save() error {
 }
 
 // UpdateStatus sets new status to DB
-func (p *Pause) UpdateStatus() error {
+func (p *Pause) UpdateStatus(status string) error {
+	p.Status = status
 	err := db.QueryRow(`
 		UPDATE pauses
 		SET status = $1
@@ -63,6 +65,23 @@ func (p *Pause) UpdateStatus() error {
 
 	if err != nil {
 		return fmt.Errorf("Unable to update pause status in DB: %v", err)
+	}
+
+	return nil
+}
+
+// AddAnswer filles answer field in DB
+func (p *Pause) AddAnswer(answer string) error {
+	p.Answer = answer
+	err := db.QueryRow(`
+		UPDATE pauses
+		SET answer = $1
+		WHERE id = $2
+		RETURNING id;
+	`, p.Answer, p.ID).Scan(&p.ID)
+
+	if err != nil {
+		return fmt.Errorf("Unable to add answer to pause in DB: %v", err)
 	}
 
 	return nil
@@ -131,7 +150,7 @@ func GetActivePauseByUserID(ID int) (*Pause, error) {
 // GetAllPauses returns all pauses collected in database
 func GetAllPauses() ([]Pause, error) {
 	rows, err := db.Query(`
-		SELECT id, "user", question, status, message_id, chat_id
+		SELECT id, "user", question, status, message_id, chat_id, answer
 		FROM pauses
 	`)
 	if err != nil {
@@ -142,6 +161,7 @@ func GetAllPauses() ([]Pause, error) {
 
 	for rows.Next() {
 		var p Pause
+		var s sql.NullString
 		if err := rows.Scan(
 			&p.ID,
 			&p.User,
@@ -149,9 +169,16 @@ func GetAllPauses() ([]Pause, error) {
 			&p.Status,
 			&p.AskMessageID,
 			&p.ChatID,
+			&s,
 		); err != nil {
 			return nil, fmt.Errorf("Cannot scan pauses from database: %v", err)
 		}
+		if s.Valid {
+			p.Answer = s.String
+		} else {
+			p.Answer = ""
+		}
+
 		pauses = append(pauses, p)
 	}
 

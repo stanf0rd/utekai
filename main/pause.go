@@ -17,8 +17,7 @@ func pause(u database.User) {
 	}
 
 	if activePause != nil {
-		activePause.Status = "failed"
-		err := activePause.UpdateStatus()
+		err := activePause.UpdateStatus("failed")
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -88,9 +87,8 @@ func ask(callback *tBot.Callback) {
 		log.Fatalf("Cannot get active pause after request accept")
 	}
 
-	pause.Status = "asked"
-	if err := pause.UpdateStatus(); err != nil {
-		log.Fatalf("Cannot save pause: %v", err)
+	if err := pause.UpdateStatus("asked"); err != nil {
+		log.Fatalf("Cannot update pause status: %v", err)
 	}
 
 	q, err := pause.GetQuestion()
@@ -99,6 +97,38 @@ func ask(callback *tBot.Callback) {
 	}
 
 	bot.Send(pause, q.Body)
+	printAllPauses()
+}
+
+func getAnswer(message *tBot.Message) {
+	u, err := database.GetUserByTelegramID(message.Sender.ID)
+	if err != nil {
+		log.Printf("User written a message not found: %v", err)
+		return
+	}
+
+	pause, err := database.GetActivePauseByUserID(u.ID)
+	if err != nil {
+		log.Printf("Cannot get active pause: %v", err)
+		return
+	}
+	if pause == nil {
+		log.Printf("Cannot get active pause to write answer")
+		return
+	}
+
+	answer := message.Text
+
+	if err := pause.UpdateStatus("done"); err != nil {
+		log.Printf("Cannot update pause status: %v", err)
+		return
+	}
+
+	if err := pause.AddAnswer(answer); err != nil {
+		log.Printf("Cannot save pause: %v", err)
+		return
+	}
+
 	printAllPauses()
 }
 

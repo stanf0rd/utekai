@@ -15,7 +15,7 @@ func PrintPauses(pauses []database.Pause) error {
 	var vr sheets.ValueRange
 	for _, p := range pauses {
 		vr.Values = append(vr.Values, []interface{}{
-			p.ID, p.User, p.Status, p.Question,
+			p.ID, p.User, p.Status, p.Question, p.Answer,
 		})
 	}
 
