@@ -20,3 +20,12 @@ func intInSlice(desired int, list []int) bool {
 	}
 	return false
 }
+
+func stringInSlice(desired string, list []string) bool {
+	for _, value := range list {
+		if value == desired {
+			return true
+		}
+	}
+	return false
+}

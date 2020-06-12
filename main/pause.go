@@ -10,6 +10,10 @@ import (
 	tBot "gopkg.in/tucnak/telebot.v2"
 )
 
+func broadcast(message *tBot.Message) {
+
+}
+
 func pause(u database.User) {
 	activePause, err := database.GetActivePauseByUserID(u.ID)
 	if err != nil {
@@ -128,6 +132,8 @@ func getAnswer(message *tBot.Message) {
 		log.Printf("Cannot save pause: %v", err)
 		return
 	}
+
+	bot.Send(pause, texts["after_answer"])
 
 	printAllPauses()
 }

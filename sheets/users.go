@@ -37,7 +37,7 @@ func PrintUsers(users []database.User) error {
 	var vr sheets.ValueRange
 	for _, user := range users {
 		vr.Values = append(vr.Values, []interface{}{
-			user.ID, user.TelegramID, user.Anonymous,
+			user.ID, user.TelegramID, user.Anonymous, user.Admin,
 		})
 	}
 
@@ -56,11 +56,11 @@ func AddUserToSheet(user database.User) error {
 	}
 
 	firstEmpty := filledCount + 1
-	writeRange := fmt.Sprintf("%s!A%d:C", usersPageName, firstEmpty)
+	writeRange := fmt.Sprintf("%s!A%d:D", usersPageName, firstEmpty)
 
 	vr := sheets.ValueRange{
 		Values: [][]interface{}{
-			{user.ID, user.TelegramID, user.Anonymous},
+			{user.ID, user.TelegramID, user.Anonymous, user.Admin},
 		},
 	}
 

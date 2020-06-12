@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
+	"strings"
 	"time"
 
 	tBot "gopkg.in/tucnak/telebot.v2"
@@ -22,8 +24,11 @@ var texts = map[string]string{
 	"non_anonimous_confirmed": "Художница увидит ваш ник и получит возможность связаться с вами.",
 	"stop_request":            "Остановись, чувачелло",
 	"stopped_button":          "Остановился",
+	"after_answer":            "Сепки",
+	"admin_hello":             "Здраствуй, Нео",
 }
 var readyButton = createButton(texts["stopped_button"])
+var admins = strings.Split(os.Getenv("ADMIN_TELEGRAM_IDS"), ",")
 
 func main() {
 	var err error
@@ -39,6 +44,7 @@ func main() {
 	printAllQuestions()
 
 	bot.Handle("/start", createStart())
+	bot.Handle("/broadcast", broadcast)
 	bot.Handle("/pause", func(message *tBot.Message) {
 		user, err := database.GetUserByTelegramID(message.Sender.ID)
 		if err != nil {
@@ -81,9 +87,12 @@ func createStart() func(*tBot.Message) {
 		}
 
 		register := func(callback *tBot.Callback) {
+			isAdmin := stringInSlice(strconv.Itoa(callback.Sender.ID), admins)
+
 			u := database.User{
 				TelegramID: callback.Sender.ID,
 				Anonymous:  anonymous,
+				Admin:      isAdmin,
 			}
 
 			exists, err := u.Exists()
@@ -104,10 +113,16 @@ func createStart() func(*tBot.Message) {
 
 				if err == nil {
 					log.Printf("User %d was saved, his ID was set to %d", u.TelegramID, u.ID)
-					sheets.AddUserToSheet(u)
+					if err := sheets.AddUserToSheet(u); err != nil {
+						log.Printf("Cannot update user list: %v", err)
+					}
 				} else {
 					log.Fatalf("Cannot save user %d, error: %v", u.TelegramID, err)
 				}
+			}
+
+			if isAdmin {
+				bot.Send(u, texts["admin_hello"])
 			}
 
 			_, err = bot.Edit(callback.Message, text)

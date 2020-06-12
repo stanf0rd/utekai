@@ -1,7 +1,8 @@
 CREATE TABLE "users" (
   "telegramID"    INTEGER     NOT NULL    PRIMARY KEY,
   id              SERIAL      NOT NULL,
-  anonymous       BOOLEAN     NOT NULL
+  anonymous       BOOLEAN     NOT NULL,
+  admin           BOOLEAN     NOT NULL    DEFAULT FALSE
 );
 
 CREATE UNIQUE INDEX index_on_users_id

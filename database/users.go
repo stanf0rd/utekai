@@ -11,6 +11,7 @@ type User struct {
 	ID         int
 	TelegramID int
 	Anonymous  bool
+	Admin      bool
 }
 
 // Exists checks if user row is already in database
@@ -34,9 +35,9 @@ func (u *User) Exists() (bool, error) {
 func GetUserByTelegramID(ID int) (*User, error) {
 	var u User
 	err := db.QueryRow(`
-		SELECT id, "telegramID", anonymous FROM "users"
+		SELECT id, "telegramID", anonymous, admin FROM "users"
 		WHERE "telegramID" = $1;
-	`, ID).Scan(&u.ID, &u.TelegramID, &u.Anonymous)
+	`, ID).Scan(&u.ID, &u.TelegramID, &u.Anonymous, &u.Admin)
 
 	if err != nil {
 		return nil, fmt.Errorf("Unable to get user from DB: %v", err)
@@ -49,10 +50,10 @@ func GetUserByTelegramID(ID int) (*User, error) {
 // writes userID in struct
 func (u *User) Save() error {
 	err := db.QueryRow(`
-		INSERT INTO "users"("telegramID", anonymous)
-		VALUES($1, $2)
+		INSERT INTO "users"("telegramID", anonymous, admin)
+		VALUES($1, $2, $3)
 		RETURNING id;
-	`, u.TelegramID, u.Anonymous).Scan(&u.ID)
+	`, u.TelegramID, u.Anonymous, u.Admin).Scan(&u.ID)
 
 	if err != nil {
 		return fmt.Errorf("Unable to save user in DB: %v", err)
@@ -85,7 +86,7 @@ func (u User) Recipient() string {
 
 // GetAllUsers returns all users collected in database
 func GetAllUsers() ([]User, error) {
-	rows, err := db.Query("SELECT \"id\", \"telegramID\", anonymous FROM \"users\"")
+	rows, err := db.Query("SELECT \"id\", \"telegramID\", anonymous, admin FROM \"users\"")
 	if err != nil {
 		return nil, fmt.Errorf("Cannot get users from database: %v", err)
 	}
@@ -94,7 +95,7 @@ func GetAllUsers() ([]User, error) {
 
 	for rows.Next() {
 		var u User
-		if err := rows.Scan(&u.ID, &u.TelegramID, &u.Anonymous); err != nil {
+		if err := rows.Scan(&u.ID, &u.TelegramID, &u.Anonymous, &u.Admin); err != nil {
 			// Check for a scan error.
 			// Query rows will be closed with defer.
 			return nil, fmt.Errorf("Cannot read users from database: %v", err)
