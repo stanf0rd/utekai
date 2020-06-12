@@ -3,6 +3,7 @@ package database
 import (
 	"database/sql"
 	"fmt"
+	"strconv"
 )
 
 // User - basic user type
@@ -29,8 +30,8 @@ func (u *User) Exists() (bool, error) {
 	}
 }
 
-// GetUserByID gets user from DB
-func GetUserByID(ID int) (*User, error) {
+// GetUserByTelegramID gets user from DB
+func GetUserByTelegramID(ID int) (*User, error) {
 	var u User
 	err := db.QueryRow(`
 		SELECT id, "telegramID", anonymous FROM "users"
@@ -75,6 +76,11 @@ func (u *User) UpdateAnonymity() error {
 	}
 
 	return nil
+}
+
+// Recipient returns TelegramID
+func (u User) Recipient() string {
+	return strconv.Itoa(u.TelegramID)
 }
 
 // GetAllUsers returns all users collected in database

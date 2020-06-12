@@ -20,7 +20,10 @@ var texts = map[string]string{
 	"notify_suggest":          "Для большего вовлечения в процесс включи уведомления.",
 	"anonimous_confirmed":     "Ваши ответы будут обезличены.",
 	"non_anonimous_confirmed": "Художница увидит ваш ник и получит возможность связаться с вами.",
+	"stop_request":            "Остановись, чувачелло",
+	"stopped_button":          "Остановился",
 }
+var readyButton = createButton(texts["stopped_button"])
 
 func main() {
 	var err error
@@ -32,20 +35,23 @@ func main() {
 	}
 
 	printAllUsers()
+	printAllPauses()
 	printAllQuestions()
 
 	bot.Handle("/start", createStart())
 	bot.Handle("/pause", func(message *tBot.Message) {
-		user, err := database.GetUserByID(message.Sender.ID)
+		user, err := database.GetUserByTelegramID(message.Sender.ID)
 		if err != nil {
 			log.Fatal(err)
 		}
 		pause(*user)
 	})
 	bot.Handle("/print", func(message *tBot.Message) {
-		printAllUsers()
-		printAllQuestions()
+		// printAllUsers()
+		// printAllQuestions()
 	})
+	bot.Handle(&readyButton, ask)
+
 	log.Println("Starting bot...")
 	bot.Start()
 }
@@ -78,7 +84,6 @@ func createStart() func(*tBot.Message) {
 		}
 
 		register := func(callback *tBot.Callback) {
-			// create user in DB here
 			u := database.User{
 				TelegramID: callback.Sender.ID,
 				Anonymous:  anonymous,

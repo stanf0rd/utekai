@@ -1,7 +1,6 @@
 package generator
 
 import (
-	"fmt"
 	"math/rand"
 	"time"
 )
@@ -25,8 +24,6 @@ func String(length int) string {
 // IntegerInRange generates integer between two received ones
 func IntegerInRange(min int, max int) int {
 	rand.Seed(time.Now().UnixNano())
-
-	fmt.Printf("%d < %d < %d", min, rand.Intn(max-min+1)+min, max)
 	return rand.Intn(max-min+1) + min
 }
 
