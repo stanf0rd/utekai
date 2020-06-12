@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/stanf0rd/utekai/database"
 	"github.com/stanf0rd/utekai/generator"
@@ -11,7 +12,28 @@ import (
 )
 
 func broadcast(message *tBot.Message) {
+	user, err := database.GetUserByTelegramID(message.Sender.ID)
+	if err != nil {
+		log.Printf("Cannot get user by telegramID %v", err)
+		return
+	}
 
+	if !user.Admin {
+		log.Printf(
+			"Non-admin user #%d tried to access broadcast feature", message.Sender.ID,
+		)
+		return
+	}
+
+	users, err := database.GetAllUsers()
+	if err != nil {
+		log.Fatalf("Cannot get users from DB: %v", err)
+	}
+
+	for _, user := range users {
+		pause(user)
+		time.Sleep(10 * time.Second)
+	}
 }
 
 func pause(u database.User) {
