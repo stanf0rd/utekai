@@ -122,6 +122,7 @@ func ask(callback *tBot.Callback) {
 		log.Fatalf("Cannot receive question by pause: %v", err)
 	}
 
+	time.Sleep(30 * time.Second)
 	bot.Send(pause, q.Body)
 	printAllPauses()
 }
