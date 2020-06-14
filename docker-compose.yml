@@ -2,17 +2,14 @@ version: "3.7"
 
 services:
     utekai:
+        restart: always
         build: .
         env_file:
             - .env
-        ports:
-            - "9292:443"
         volumes:
             - ./credentials:/credentials
     postgres:
         image: postgres:12.2-alpine
-        ports:
-            - "5432:5432"
         expose:
             - "5432"
         env_file:

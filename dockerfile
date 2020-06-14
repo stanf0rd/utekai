@@ -52,8 +52,5 @@ COPY --from=builder /go/bin/utekai /go/bin/utekai
 # Use an unprivileged user
 USER appuser:appuser
 
-# Port on which the service will be exposed.
-EXPOSE 9292
-
 # Run the hello binary.
 ENTRYPOINT ["/go/bin/utekai"]

@@ -17,14 +17,14 @@ import (
 
 var bot *tBot.Bot
 var texts = map[string]string{
-	"anonimous_ask":           "Оставить художнице возможность связаться с вами?",
-	"greeting_text":           "Бот будет отправлять что-то иногда. Отвечай на вопросы. Можно фото, текст, чо попросят.",
-	"notify_suggest":          "Для большего вовлечения в процесс включи уведомления.",
+	"anonimous_ask":           "Хотите ли вы отправлять ответы анонимно? ",
+	"greeting_text":           "Бот будет просить вас остановиться несколько раз в день в течение недели. После активации сообщения у вас есть 30 секунд до вопроса. Остановитесь, прислушайтесь к себе и миру.\n\nДалее приходит вопрос. На него можно ответить одним сообщением, содержащим текст. Пожалуйста, не торопитесь, дайте себе время на погружение. \n\nВаши ответы будут использоваться для создания произведения.",
+	"notify_suggest":          "Для большего вовлечения в процесс включите уведомления.",
 	"anonimous_confirmed":     "Ваши ответы будут обезличены.",
-	"non_anonimous_confirmed": "Художница увидит ваш ник и получит возможность связаться с вами.",
-	"stop_request":            "Остановись, чувачелло",
-	"stopped_button":          "Остановился",
-	"after_answer":            "Сепки",
+	"non_anonimous_confirmed": "Художница будет видеть, кому принадлежат ответы.",
+	"stop_request":            "Остановись",
+	"stopped_button":          "Останавливаюсь",
+	"after_answer":            "Благодарю.",
 	"admin_hello":             "Здраствуй, Нео",
 }
 var readyButton = createButton(texts["stopped_button"])
@@ -45,13 +45,7 @@ func main() {
 
 	bot.Handle("/start", createStart())
 	bot.Handle("/broadcast", broadcast)
-	bot.Handle("/pause", func(message *tBot.Message) {
-		user, err := database.GetUserByTelegramID(message.Sender.ID)
-		if err != nil {
-			log.Fatal(err)
-		}
-		pause(*user)
-	})
+	bot.Handle("/info", info)
 	bot.Handle(tBot.OnText, getAnswer)
 	bot.Handle(&readyButton, ask)
 
@@ -140,15 +134,30 @@ func createStart() func(*tBot.Message) {
 func createAnonymityAsk(
 	createRegistrar func(anonimous bool) func(*tBot.Callback),
 ) func(*tBot.Message) {
-	nonAnonymous := createButton("Да")
-	anonymous := createButton("Нет")
+	nonAnonymous := createButton("Нет")
+	anonymous := createButton("Да")
 
 	bot.Handle(&anonymous, createRegistrar(true))
 	bot.Handle(&nonAnonymous, createRegistrar(false))
 
 	return func(message *tBot.Message) {
 		bot.Send(message.Sender, texts["anonimous_ask"], &tBot.ReplyMarkup{
-			InlineKeyboard: [][]tBot.InlineButton{{nonAnonymous, anonymous}},
+			InlineKeyboard: [][]tBot.InlineButton{{anonymous, nonAnonymous}},
 		})
 	}
+}
+
+func info(message *tBot.Message) {
+	bot.Send(message.Sender, `
+Этот бот – часть серии перформансов художницы Перебатовой Елизаветы. Пауза определяется авторкой как встреча с собой и момент максимального сосредоточения внимания. Настолько конкретного, что остальные процессы становятся почти невозможными. Направляя внимание остановкой и вопросами, человек способен пойти по непривычному сценарию и что-то обнаружить в себе. Вокруг себя. В себе через то, как ощущается всё вокруг.
+
+Работа с остановкой содержит отсылки к суфийской философии и упражнениям, согласно которым человеческое сознание может преодолеть свои рамки именно в момент прерывания действия. Бот предлагает человеку остановиться и ответить на вопрос, а затем собирает данные для следующего произведения. Тем самым он создает базу ответов, через которую зритель может войти в контакт с собой через чужой опыт и соотношение с ним.
+
+Контакты художницы для обратной связи:
+@Lisavetata
+https://www.facebook.com/elisaveta.perebatova
+lisavetalis@yandex.ru
+
+Здесь появится ссылка на произведение, сделанное на основе ответов
+	`, tBot.NoPreview)
 }
