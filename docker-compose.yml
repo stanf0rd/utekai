@@ -2,12 +2,13 @@ version: "3.7"
 
 services:
     utekai:
-        restart: always
+        # restart: always
         build: .
         env_file:
             - .env
         volumes:
             - ./credentials:/credentials
+            - ./images:/images
     postgres:
         image: postgres:12.2-alpine
         expose:

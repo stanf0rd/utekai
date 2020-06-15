@@ -21,11 +21,8 @@ CREATE TABLE pauses (
   "user"          INT         NOT NULL    REFERENCES "users"(id),
   question        INT         NOT NULL    REFERENCES questions(id),
   answer          TEXT,
+  photo_path      TEXT,
   status          status      NOT NULL    DEFAULT 'requested',
   message_id      INT,
   chat_id         BIGINT
 );
-
--- CREATE TABLE mailings (
---   date DATETIME
--- )

@@ -47,6 +47,7 @@ func main() {
 	bot.Handle("/broadcast", broadcast)
 	bot.Handle("/info", info)
 	bot.Handle(tBot.OnText, getAnswer)
+	bot.Handle(tBot.OnPhoto, getAnswer)
 	bot.Handle(&readyButton, ask)
 
 	log.Println("Starting bot...")

@@ -13,6 +13,7 @@ type Pause struct {
 	User         int
 	Question     int
 	Answer       string
+	Photo        string
 	Status       string
 	AskMessageID int
 	ChatID       int64
@@ -87,6 +88,23 @@ func (p *Pause) AddAnswer(answer string) error {
 	return nil
 }
 
+// AddPhoto filles photo field in DB
+func (p *Pause) AddPhoto(filePath string) error {
+	p.Photo = filePath
+	err := db.QueryRow(`
+		UPDATE pauses
+		SET photo_path = $1
+		WHERE id = $2
+		RETURNING id;
+	`, p.Photo, p.ID).Scan(&p.ID)
+
+	if err != nil {
+		return fmt.Errorf("Unable to add photo to pause in DB: %v", err)
+	}
+
+	return nil
+}
+
 // MessageSig returns messageID and chatID
 // for Editable interface from telegramBot
 func (p Pause) MessageSig() (string, int64) {
@@ -150,7 +168,7 @@ func GetActivePauseByUserID(ID int) (*Pause, error) {
 // GetAllPauses returns all pauses collected in database
 func GetAllPauses() ([]Pause, error) {
 	rows, err := db.Query(`
-		SELECT id, "user", question, status, message_id, chat_id, answer
+		SELECT id, "user", question, status, message_id, chat_id, answer, photo_path
 		FROM pauses
 	`)
 	if err != nil {
@@ -161,22 +179,24 @@ func GetAllPauses() ([]Pause, error) {
 
 	for rows.Next() {
 		var p Pause
-		var s sql.NullString
+		var answer, photoPath sql.NullString
 		if err := rows.Scan(
-			&p.ID,
-			&p.User,
-			&p.Question,
-			&p.Status,
-			&p.AskMessageID,
-			&p.ChatID,
-			&s,
+			&p.ID, &p.User, &p.Question, &p.Status, &p.AskMessageID, &p.ChatID,
+			&answer, &photoPath,
 		); err != nil {
 			return nil, fmt.Errorf("Cannot scan pauses from database: %v", err)
 		}
-		if s.Valid {
-			p.Answer = s.String
+
+		if answer.Valid {
+			p.Answer = answer.String
 		} else {
 			p.Answer = ""
+		}
+
+		if photoPath.Valid {
+			p.Photo = photoPath.String
+		} else {
+			p.Photo = ""
 		}
 
 		pauses = append(pauses, p)

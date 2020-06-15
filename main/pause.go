@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"strconv"
@@ -48,7 +50,7 @@ func pause(u database.User) {
 			log.Fatal(err)
 		}
 
-		_, err = bot.Edit(activePause, texts["stop_request"])
+		err = bot.Delete(activePause)
 		if err != nil {
 			log.Println(err)
 		}
@@ -113,10 +115,6 @@ func ask(callback *tBot.Callback) {
 		log.Fatalf("Cannot get active pause after request accept")
 	}
 
-	if err := pause.UpdateStatus("asked"); err != nil {
-		log.Fatalf("Cannot update pause status: %v", err)
-	}
-
 	q, err := pause.GetQuestion()
 	if err != nil {
 		log.Fatalf("Cannot receive question by pause: %v", err)
@@ -124,6 +122,9 @@ func ask(callback *tBot.Callback) {
 
 	time.Sleep(30 * time.Second)
 	bot.Send(pause, q.Body)
+	if err := pause.UpdateStatus("asked"); err != nil {
+		log.Fatalf("Cannot update pause status: %v", err)
+	}
 	printAllPauses()
 }
 
@@ -140,18 +141,29 @@ func getAnswer(message *tBot.Message) {
 		return
 	}
 	if pause == nil {
-		log.Printf("Cannot get active pause to write answer")
+		log.Printf("Cannot get active accepted pause to write answer")
 		return
 	}
-
-	answer := message.Text
+	if pause.Status != "asked" {
+		log.Printf("Pause is not accepted, cannot write answer")
+		return
+	}
 
 	if err := pause.UpdateStatus("done"); err != nil {
 		log.Printf("Cannot update pause status: %v", err)
 		return
 	}
 
-	if err := pause.AddAnswer(answer); err != nil {
+	if message.Photo != nil {
+		filePath, err := getPhoto(message.Photo)
+		if err != nil {
+			log.Printf("Cannot get photo: %v", err)
+		} else if err := pause.AddPhoto(filePath); err != nil {
+			log.Printf("Cannot add photo to pause: %v", err)
+		}
+	}
+
+	if err := pause.AddAnswer(message.Text); err != nil {
 		log.Printf("Cannot save pause: %v", err)
 		return
 	}
@@ -189,4 +201,25 @@ func chooseQuestion(user database.User) int {
 
 	chosen := generator.GetRandomFromArray(questions)
 	return chosen
+}
+
+func getPhoto(photo *tBot.Photo) (filePath string, err error) {
+	filePath = fmt.Sprintf("/images/%s.jpeg", generator.String(10))
+
+	readCloser, err := bot.GetFile(photo.MediaFile())
+	if err != nil {
+		return "", fmt.Errorf("Cannot get file reader from bot: %v", err)
+	}
+
+	bytes, err := ioutil.ReadAll(readCloser)
+	if err != nil {
+		return "", fmt.Errorf("Cannot read file: %v", err)
+	}
+
+	err = ioutil.WriteFile(filePath, bytes, 0777)
+	if err != nil {
+		return "", fmt.Errorf("Cannot write file to fs: %v", err)
+	}
+
+	return filePath, nil
 }
