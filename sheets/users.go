@@ -2,7 +2,6 @@ package sheets
 
 import (
 	"fmt"
-	"log"
 	"os"
 
 	"github.com/stanf0rd/utekai/database"
@@ -10,27 +9,6 @@ import (
 )
 
 var usersPageName = os.Getenv("USERS_PAGE_NAME")
-
-// Check if module works
-func Check() {
-	// Define the Sheet Name and fields to select
-	readRange := "Лист1!A2:B"
-
-	// Pull the data from the sheet
-	resp, err := service.Spreadsheets.Values.Get(spreadsheetID, readRange).Do()
-	if err != nil {
-		log.Fatalf("Unable to retrieve data from sheet: %v", err)
-	}
-
-	// Display pulled data
-	if len(resp.Values) == 0 {
-		fmt.Println("No data found.")
-	} else {
-		for _, row := range resp.Values {
-			fmt.Printf("%s, %s\n", row[0], row[1])
-		}
-	}
-}
 
 // PrintUsers pushes all users to gsheet
 func PrintUsers(users []database.User) error {
