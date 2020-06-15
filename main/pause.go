@@ -154,16 +154,20 @@ func getAnswer(message *tBot.Message) {
 		return
 	}
 
+	var answer string
 	if message.Photo != nil {
+		answer = message.Caption
 		filePath, err := getPhoto(message.Photo)
 		if err != nil {
 			log.Printf("Cannot get photo: %v", err)
 		} else if err := pause.AddPhoto(filePath); err != nil {
 			log.Printf("Cannot add photo to pause: %v", err)
 		}
+	} else {
+		answer = message.Text
 	}
 
-	if err := pause.AddAnswer(message.Text); err != nil {
+	if err := pause.AddAnswer(answer); err != nil {
 		log.Printf("Cannot save pause: %v", err)
 		return
 	}
