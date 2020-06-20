@@ -27,7 +27,10 @@ var texts = map[string]string{
 	"after_answer":            "Благодарю",
 	"admin_hello":             "Здраствуй, Нео",
 }
-var readyButton = createButton(texts["stopped_button"])
+var readyButton = tBot.InlineButton{
+	Unique: "stopped_button",
+	Text:   texts["stopped_button"],
+}
 var admins = strings.Split(os.Getenv("ADMIN_TELEGRAM_IDS"), ",")
 
 func main() {

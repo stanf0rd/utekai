@@ -68,7 +68,11 @@ func pause(u database.User) {
 	}
 	log.Printf("Question chosen: %v", q.Body)
 
-	message := request(u)
+	message, err := request(u)
+	if err != nil {
+		log.Printf("Unable to send pause request: %v", err)
+		return
+	}
 
 	p := database.Pause{
 		User:         u.ID,
@@ -84,16 +88,16 @@ func pause(u database.User) {
 	printAllPauses()
 }
 
-func request(u database.User) *tBot.Message {
+func request(u database.User) (*tBot.Message, error) {
 	message, err := bot.Send(u, texts["stop_request"], &tBot.ReplyMarkup{
 		InlineKeyboard: [][]tBot.InlineButton{{readyButton}},
 	})
 
 	if err != nil {
-		log.Fatalf("Unable to send pause request: %v", err)
+		return nil, fmt.Errorf("Unable to send pause request: %v", err)
 	}
 
-	return message
+	return message, nil
 }
 
 func ask(callback *tBot.Callback) {
